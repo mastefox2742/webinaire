@@ -15,7 +15,7 @@ export default async function AdminPage() {
   if (!data) redirect("/admin/login");
 
   const { config, inscrits, stats } = data;
-  const intervenants = getIntervenants();
+  const intervenants = await getIntervenants();
   const hasResend = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 
   const webinarDate = new Date(config.date);
@@ -26,7 +26,6 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Top bar */}
       <header className="sticky top-0 z-50 bg-[#06060e]/95 backdrop-blur border-b border-white/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-2">
@@ -51,10 +50,7 @@ export default async function AdminPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
 
-          {/* LEFT COL — Stats + Participants */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Stat cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: "Inscrits total", value: stats.total, icon: Users, color: "#6c63ff" },
@@ -70,7 +66,6 @@ export default async function AdminPage() {
               ))}
             </div>
 
-            {/* Config actuelle */}
             <div className="card-dark rounded-2xl p-5">
               <h2 className="font-bold text-white mb-3 flex items-center gap-2">
                 <Settings className="w-4 h-4 text-[#6c63ff]" />
@@ -108,17 +103,13 @@ export default async function AdminPage() {
               </div>
             </div>
 
-            {/* Liste inscrits */}
             <div className="card-dark rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <h2 className="font-bold text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#6c63ff]" />
                   Inscrits ({stats.total})
                 </h2>
-                <a
-                  href="/admin/export"
-                  className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
-                >
+                <a href="/admin/export" className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors">
                   <Download className="w-3.5 h-3.5" />
                   Export CSV
                 </a>
@@ -170,9 +161,7 @@ export default async function AdminPage() {
             </div>
           </div>
 
-          {/* RIGHT COL — Config + Emails */}
           <div className="space-y-6">
-            {/* Config form */}
             <div className="card-dark rounded-2xl p-5">
               <h2 className="font-bold text-white mb-5 flex items-center gap-2">
                 <Settings className="w-4 h-4 text-[#6c63ff]" />
@@ -181,7 +170,6 @@ export default async function AdminPage() {
               <ConfigForm config={config} />
             </div>
 
-            {/* Intervenants panel */}
             <div className="card-dark rounded-2xl p-5">
               <h2 className="font-bold text-white mb-5 flex items-center gap-2">
                 <Mic className="w-4 h-4 text-[#a78bfa]" />
@@ -190,17 +178,12 @@ export default async function AdminPage() {
               <IntervenantsPanel intervenants={intervenants} />
             </div>
 
-            {/* Email panel */}
             <div className="card-dark rounded-2xl p-5">
               <h2 className="font-bold text-white mb-5 flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#00d4ff]" />
                 Emails
               </h2>
-              <EmailPanel
-                stats={stats}
-                hasCallLink={!!config.callLink}
-                hasResend={hasResend}
-              />
+              <EmailPanel stats={stats} hasCallLink={!!config.callLink} hasResend={hasResend} />
             </div>
           </div>
 

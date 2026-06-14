@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { getDb } from "./firebase";
 
 export type Inscrit = {
   nom: string;
@@ -11,25 +10,32 @@ export type Inscrit = {
   emailRappelSent?: boolean;
 };
 
-const FILE = path.join(process.cwd(), "data", "inscrits.json");
+const COL = "inscrits";
 
-export function getInscrits(): Inscrit[] {
+export async function getInscrits(): Promise<Inscrit[]> {
   try {
-    if (fs.existsSync(FILE)) {
-      return JSON.parse(fs.readFileSync(FILE, "utf-8"));
-    }
-  } catch {}
-  return [];
+    const db = getDb();
+    const snap = await db.collection(COL).orderBy("date", "asc").get();
+    return snap.docs.map((d) => d.data() as Inscrit);
+  } catch {
+    return [];
+  }
 }
 
-export function saveInscrits(inscrits: Inscrit[]): void {
-  const dir = path.dirname(FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(inscrits, null, 2));
+export async function saveInscrits(inscrits: Inscrit[]): Promise<void> {
+  const db = getDb();
+  const batch = db.batch();
+  const existing = await db.collection(COL).get();
+  existing.docs.forEach((d) => batch.delete(d.ref));
+  inscrits.forEach((inscrit) => {
+    const ref = db.collection(COL).doc(inscrit.email.toLowerCase().replace(/[^a-z0-9]/g, "_"));
+    batch.set(ref, inscrit);
+  });
+  await batch.commit();
 }
 
-export function addInscrit(entry: Omit<Inscrit, "emailConfirmationSent" | "emailRappelSent">): void {
-  const inscrits = getInscrits();
-  inscrits.push({ ...entry, emailConfirmationSent: false, emailRappelSent: false });
-  saveInscrits(inscrits);
+export async function addInscrit(entry: Omit<Inscrit, "emailConfirmationSent" | "emailRappelSent">): Promise<void> {
+  const db = getDb();
+  const docId = entry.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+  await db.collection(COL).doc(docId).set({ ...entry, emailConfirmationSent: false, emailRappelSent: false });
 }

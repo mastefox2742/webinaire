@@ -12,7 +12,7 @@ export async function GET() {
     return new NextResponse("Non autorisé", { status: 401 });
   }
 
-  const inscrits = getInscrits();
+  const inscrits = await getInscrits();
   const headers = ["Nom", "Email", "Téléphone", "Profil", "Date inscription", "Confirmation envoyée", "Rappel envoyé"];
   const rows = inscrits.map((i) => [
     csvSafe(i.nom),

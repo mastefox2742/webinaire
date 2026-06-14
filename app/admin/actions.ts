@@ -76,17 +76,17 @@ export async function updateConfigAction(
 
   if (!date) return { error: "La date est obligatoire." };
 
-  saveConfig({ date, callLink, replayLink, title, whatsappGroupLink });
+  await saveConfig({ date, callLink, replayLink, title, whatsappGroupLink });
   return { success: true };
 }
 
 export async function sendRappelAction(): Promise<{ sent: number; errors: number }> {
   if (!(await isAuthenticated())) return { sent: 0, errors: 0 };
 
-  const config = getConfig();
+  const config = await getConfig();
   if (!config.callLink) return { sent: 0, errors: 0 };
 
-  const inscrits = getInscrits();
+  const inscrits = await getInscrits();
   let sent = 0;
   let errors = 0;
 
@@ -101,15 +101,15 @@ export async function sendRappelAction(): Promise<{ sent: number; errors: number
     }
   }
 
-  saveInscrits(inscrits);
+  await saveInscrits(inscrits);
   return { sent, errors };
 }
 
 export async function sendConfirmationsAction(): Promise<{ sent: number; errors: number }> {
   if (!(await isAuthenticated())) return { sent: 0, errors: 0 };
 
-  const config = getConfig();
-  const inscrits = getInscrits();
+  const config = await getConfig();
+  const inscrits = await getInscrits();
   let sent = 0;
   let errors = 0;
 
@@ -124,14 +124,13 @@ export async function sendConfirmationsAction(): Promise<{ sent: number; errors:
     }
   }
 
-  saveInscrits(inscrits);
+  await saveInscrits(inscrits);
   return { sent, errors };
 }
 
 export async function getAdminData() {
   if (!(await isAuthenticated())) return null;
-  const config = getConfig();
-  const inscrits = getInscrits();
+  const [config, inscrits] = await Promise.all([getConfig(), getInscrits()]);
   const entrepreneurs = inscrits.filter((i) => i.profil === "entrepreneur_pro").length;
   const etudiants = inscrits.filter((i) => i.profil === "lyceen_etudiant").length;
   const rappelsSent = inscrits.filter((i) => i.emailRappelSent).length;

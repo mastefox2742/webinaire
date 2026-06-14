@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { getDb } from "./firebase";
 
 export type WebinarConfig = {
   date: string;
@@ -9,8 +8,6 @@ export type WebinarConfig = {
   whatsappGroupLink: string;
 };
 
-const CONFIG_PATH = path.join(process.cwd(), "data", "config.json");
-
 const DEFAULTS: WebinarConfig = {
   date: "2026-08-29T19:30:00+01:00",
   callLink: "",
@@ -19,21 +16,21 @@ const DEFAULTS: WebinarConfig = {
   whatsappGroupLink: "",
 };
 
-export function getConfig(): WebinarConfig {
+const DOC = "webinaire/config";
+
+export async function getConfig(): Promise<WebinarConfig> {
   try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
-      return { ...DEFAULTS, ...JSON.parse(raw) };
-    }
+    const db = getDb();
+    const snap = await db.doc(DOC).get();
+    if (snap.exists) return { ...DEFAULTS, ...(snap.data() as Partial<WebinarConfig>) };
   } catch {}
   return { ...DEFAULTS };
 }
 
-export function saveConfig(config: Partial<WebinarConfig>): WebinarConfig {
-  const current = getConfig();
+export async function saveConfig(config: Partial<WebinarConfig>): Promise<WebinarConfig> {
+  const current = await getConfig();
   const updated = { ...current, ...config };
-  const dir = path.dirname(CONFIG_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2));
+  const db = getDb();
+  await db.doc(DOC).set(updated);
   return updated;
 }

@@ -20,21 +20,21 @@ export async function saveIntervenantAction(
 
   if (!nom || !titre) return { error: "Nom et titre obligatoires." };
 
-  const list = getIntervenants();
+  const list = await getIntervenants();
   const idx = list.findIndex((i) => i.id === id);
   const entry: Intervenant = { id, nom, titre, bio, photo, badges };
 
   if (idx >= 0) list[idx] = entry;
   else list.push(entry);
 
-  saveIntervenants(list);
+  await saveIntervenants(list);
   return { success: true };
 }
 
 export async function deleteIntervenantAction(id: string): Promise<void> {
   if (!(await isAuthenticated())) return;
-  const list = getIntervenants().filter((i) => i.id !== id);
-  saveIntervenants(list);
+  const list = (await getIntervenants()).filter((i) => i.id !== id);
+  await saveIntervenants(list);
 }
 
 export async function getIntervenantsAction(): Promise<Intervenant[]> {

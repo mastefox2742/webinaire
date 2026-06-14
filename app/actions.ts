@@ -27,18 +27,18 @@ export async function inscrire(
     return { status: "error", message: "Adresse email invalide." };
   }
 
-  const existing = getInscrits();
+  const existing = await getInscrits();
   if (existing.some((i) => i.email.toLowerCase() === email.toLowerCase())) {
     return { status: "error", message: "Cette adresse email est déjà inscrite." };
   }
 
   try {
-    addInscrit({ nom, email, telephone, profil, date: new Date().toISOString() });
+    await addInscrit({ nom, email, telephone, profil, date: new Date().toISOString() });
   } catch {
     return { status: "error", message: "Erreur lors de l'enregistrement. Réessaie dans quelques instants." };
   }
 
-  const config = getConfig();
+  const config = await getConfig();
 
   // Email de confirmation (best-effort)
   try {

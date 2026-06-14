@@ -1,16 +1,15 @@
-import fs from "fs";
-import path from "path";
+import { getDb } from "./firebase";
 
 export type Intervenant = {
   id: string;
   nom: string;
   titre: string;
   bio: string;
-  photo: string; // chemin public ex: /uploads/intervenants/xxx.jpg
-  badges: string[]; // ["500+ accompagnés", "Formateur IA"]
+  photo: string;
+  badges: string[];
 };
 
-const FILE = path.join(process.cwd(), "data", "intervenants.json");
+const COL = "intervenants";
 
 const DEFAULT: Intervenant[] = [
   {
@@ -23,15 +22,24 @@ const DEFAULT: Intervenant[] = [
   },
 ];
 
-export function getIntervenants(): Intervenant[] {
+export async function getIntervenants(): Promise<Intervenant[]> {
   try {
-    if (fs.existsSync(FILE)) return JSON.parse(fs.readFileSync(FILE, "utf-8"));
-  } catch {}
-  return [...DEFAULT];
+    const db = getDb();
+    const snap = await db.collection(COL).get();
+    if (snap.empty) return [...DEFAULT];
+    return snap.docs.map((d) => d.data() as Intervenant);
+  } catch {
+    return [...DEFAULT];
+  }
 }
 
-export function saveIntervenants(list: Intervenant[]): void {
-  const dir = path.dirname(FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(list, null, 2));
+export async function saveIntervenants(list: Intervenant[]): Promise<void> {
+  const db = getDb();
+  const batch = db.batch();
+  const existing = await db.collection(COL).get();
+  existing.docs.forEach((d) => batch.delete(d.ref));
+  list.forEach((item) => {
+    batch.set(db.collection(COL).doc(item.id), item);
+  });
+  await batch.commit();
 }

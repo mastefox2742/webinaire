@@ -13,13 +13,11 @@ import { Formulaire } from "./components/Formulaire";
 import { FAQ } from "./components/FAQ";
 import { Footer } from "./components/Footer";
 
-export default function LandingPage() {
-  const config = getConfig();
-  const intervenants = getIntervenants();
+export default async function LandingPage() {
+  const [config, intervenants] = await Promise.all([getConfig(), getIntervenants()]);
 
   return (
     <>
-      {/* Image de fond fixe sur toute la page */}
       <div className="page-bg" />
       <main className="relative z-10 min-h-screen">
         <Header date={config.date} />

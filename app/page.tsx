@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 import { getConfig } from "./lib/config";
 import { getIntervenants } from "./lib/intervenants";

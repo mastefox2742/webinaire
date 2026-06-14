@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { getDb } from "./firebase";
 
 export type Intervenant = {
@@ -22,15 +23,23 @@ const DEFAULT: Intervenant[] = [
   },
 ];
 
+const fetchIntervenants = unstable_cache(
+  async (): Promise<Intervenant[]> => {
+    try {
+      const db = getDb();
+      const snap = await db.collection(COL).get();
+      if (snap.empty) return [...DEFAULT];
+      return snap.docs.map((d) => d.data() as Intervenant);
+    } catch {
+      return [...DEFAULT];
+    }
+  },
+  ["intervenants"],
+  { revalidate: 60, tags: ["intervenants"] }
+);
+
 export async function getIntervenants(): Promise<Intervenant[]> {
-  try {
-    const db = getDb();
-    const snap = await db.collection(COL).get();
-    if (snap.empty) return [...DEFAULT];
-    return snap.docs.map((d) => d.data() as Intervenant);
-  } catch {
-    return [...DEFAULT];
-  }
+  return fetchIntervenants();
 }
 
 export async function saveIntervenants(list: Intervenant[]): Promise<void> {
@@ -42,4 +51,5 @@ export async function saveIntervenants(list: Intervenant[]): Promise<void> {
     batch.set(db.collection(COL).doc(item.id), item);
   });
   await batch.commit();
+  revalidateTag("intervenants", "seconds");
 }

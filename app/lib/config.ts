@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { getDb } from "./firebase";
 
 export type WebinarConfig = {
@@ -18,13 +19,21 @@ const DEFAULTS: WebinarConfig = {
 
 const DOC = "webinaire/config";
 
+const fetchConfig = unstable_cache(
+  async (): Promise<WebinarConfig> => {
+    try {
+      const db = getDb();
+      const snap = await db.doc(DOC).get();
+      if (snap.exists) return { ...DEFAULTS, ...(snap.data() as Partial<WebinarConfig>) };
+    } catch {}
+    return { ...DEFAULTS };
+  },
+  ["webinar-config"],
+  { revalidate: 60, tags: ["config"] }
+);
+
 export async function getConfig(): Promise<WebinarConfig> {
-  try {
-    const db = getDb();
-    const snap = await db.doc(DOC).get();
-    if (snap.exists) return { ...DEFAULTS, ...(snap.data() as Partial<WebinarConfig>) };
-  } catch {}
-  return { ...DEFAULTS };
+  return fetchConfig();
 }
 
 export async function saveConfig(config: Partial<WebinarConfig>): Promise<WebinarConfig> {
@@ -32,5 +41,6 @@ export async function saveConfig(config: Partial<WebinarConfig>): Promise<Webina
   const updated = { ...current, ...config };
   const db = getDb();
   await db.doc(DOC).set(updated);
+  revalidateTag("config", "seconds");
   return updated;
 }

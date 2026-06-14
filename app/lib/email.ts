@@ -14,14 +14,16 @@ function getTransporter() {
 
 const FROM = process.env.EMAIL_FROM ?? "Groupe Alpha <zlatobambi@gmail.com>";
 
+const TZ = "Africa/Brazzaville";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: TZ,
   });
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 }
 
 export async function sendConfirmationEmail(inscrit: Inscrit, config: WebinarConfig): Promise<boolean> {

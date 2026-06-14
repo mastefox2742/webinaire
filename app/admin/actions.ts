@@ -7,31 +7,43 @@ import { getInscrits, saveInscrits } from "../lib/inscrits";
 import { sendRappelEmail, sendConfirmationEmail } from "../lib/email";
 
 const SESSION_COOKIE = "ga_admin_session";
-const SESSION_VALUE = "authenticated";
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password + "ga_salt_2026").digest("hex");
 }
 
 function getAdminPasswordHash(): string {
-  const raw = process.env.ADMIN_PASSWORD ?? "admin123";
+  const raw = process.env.ADMIN_PASSWORD;
+  if (!raw) throw new Error("ADMIN_PASSWORD environment variable is not set");
   return hashPassword(raw);
 }
+
+function generateSessionToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+const sessionTokens = new Set<string>();
 
 export async function loginAction(
   _prev: { error?: string; success?: boolean },
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
   const password = String(formData.get("password") ?? "");
-  if (hashPassword(password) !== getAdminPasswordHash()) {
-    return { error: "Mot de passe incorrect." };
+  try {
+    if (hashPassword(password) !== getAdminPasswordHash()) {
+      return { error: "Mot de passe incorrect." };
+    }
+  } catch {
+    return { error: "Configuration serveur manquante. Contactez l'administrateur." };
   }
+  const token = generateSessionToken();
+  sessionTokens.add(token);
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, SESSION_VALUE, {
+  jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 8, // 8h
+    maxAge: 60 * 60 * 8,
     path: "/admin",
   });
   return { success: true };
@@ -39,12 +51,15 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
   const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (token) sessionTokens.delete(token);
   jar.delete(SESSION_COOKIE);
 }
 
 export async function isAuthenticated(): Promise<boolean> {
   const jar = await cookies();
-  return jar.get(SESSION_COOKIE)?.value === SESSION_VALUE;
+  const token = jar.get(SESSION_COOKIE)?.value;
+  return !!token && sessionTokens.has(token);
 }
 
 export async function updateConfigAction(

@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { isAuthenticated } from "../../admin/actions";
 import { getInscrits } from "../../lib/inscrits";
 
+function csvSafe(value: string): string {
+  const sanitized = value.replace(/^[=+\-@\t]/, "'$&");
+  return `"${sanitized.replace(/"/g, '""')}"`;
+}
+
 export async function GET() {
-  const jar = await cookies();
-  if (jar.get("ga_admin_session")?.value !== "authenticated") {
+  if (!(await isAuthenticated())) {
     return new NextResponse("Non autorisé", { status: 401 });
   }
 
   const inscrits = getInscrits();
   const headers = ["Nom", "Email", "Téléphone", "Profil", "Date inscription", "Confirmation envoyée", "Rappel envoyé"];
   const rows = inscrits.map((i) => [
-    `"${i.nom}"`,
-    `"${i.email}"`,
-    `"${i.telephone}"`,
-    `"${i.profil === "entrepreneur_pro" ? "Entrepreneur/Pro" : "Lycéen/Étudiant"}"`,
-    `"${new Date(i.date).toLocaleString("fr-FR")}"`,
+    csvSafe(i.nom),
+    csvSafe(i.email),
+    csvSafe(i.telephone),
+    csvSafe(i.profil === "entrepreneur_pro" ? "Entrepreneur/Pro" : "Lycéen/Étudiant"),
+    csvSafe(new Date(i.date).toLocaleString("fr-FR")),
     i.emailConfirmationSent ? "Oui" : "Non",
     i.emailRappelSent ? "Oui" : "Non",
   ]);

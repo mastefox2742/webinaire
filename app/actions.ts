@@ -35,7 +35,8 @@ export async function inscrire(
   try {
     await addInscrit({ nom, email, telephone, profil, date: new Date().toISOString() });
   } catch (err) {
-    console.error("[inscription] addInscrit failed:", err);
+    const msg = err instanceof Error ? err.message + " | " + err.stack : String(err);
+    console.error("[inscription] addInscrit failed: " + msg);
     return { status: "error", message: "Erreur lors de l'enregistrement. Réessaie dans quelques instants." };
   }
 

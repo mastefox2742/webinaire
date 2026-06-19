@@ -70,10 +70,10 @@ export async function inscrire(
 
   let confirmationSent = false;
   try {
-    confirmationSent = await sendConfirmationEmail(inscrit, config);
+    confirmationSent = await sendInscriptionToN8n(inscrit, config);
 
     if (!confirmationSent) {
-      confirmationSent = await sendInscriptionToN8n(inscrit, config);
+      confirmationSent = await sendConfirmationEmail(inscrit, config);
     }
 
     if (confirmationSent) await markEmailConfirmationSent(email);

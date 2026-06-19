@@ -1,14 +1,36 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { inscrire, type InscriptionState } from "../actions";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import type { InscriptionState } from "../actions";
 import { CheckCircle, AlertCircle, Loader2, MessageCircle } from "lucide-react";
 
 const initial: InscriptionState = { status: "idle" };
 
 export function Formulaire({ whatsappGroupLink }: { whatsappGroupLink: string }) {
-  const [state, action, pending] = useActionState(inscrire, initial);
+  const [state, setState] = useState<InscriptionState>(initial);
+  const [pending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+
+    try {
+      const response = await fetch("/api/inscription", {
+        method: "POST",
+        body: new FormData(event.currentTarget),
+      });
+      const result = (await response.json()) as InscriptionState;
+      setState(result);
+    } catch {
+      setState({
+        status: "error",
+        message: "Le service d'inscription est momentanément indisponible.",
+      });
+    } finally {
+      setPending(false);
+    }
+  }
 
   useEffect(() => {
     if (state.status === "success") {
@@ -54,7 +76,7 @@ export function Formulaire({ whatsappGroupLink }: { whatsappGroupLink: string })
               )}
             </div>
           ) : (
-            <form ref={formRef} action={action} className="space-y-5">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
               {[
                 { name: "nom",       label: "Nom complet",          type: "text",  placeholder: "Ex. : Jean-Pierre Moukala", required: true },
                 { name: "email",     label: "Email",                 type: "email", placeholder: "ton@email.com",             required: true },

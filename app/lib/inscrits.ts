@@ -13,14 +13,10 @@ export type Inscrit = {
 const COL = "inscrits";
 
 export async function getInscrits(): Promise<Inscrit[]> {
-  try {
-    const db = getDb();
-    const snap = await db.collection(COL).get();
-    const docs = snap.docs.map((d) => d.data() as Inscrit);
-    return docs.sort((a, b) => a.date.localeCompare(b.date));
-  } catch {
-    return [];
-  }
+  const db = getDb();
+  const snap = await db.collection(COL).get();
+  const docs = snap.docs.map((d) => d.data() as Inscrit);
+  return docs.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function saveInscrits(inscrits: Inscrit[]): Promise<void> {
@@ -39,4 +35,10 @@ export async function addInscrit(entry: Omit<Inscrit, "emailConfirmationSent" | 
   const db = getDb();
   const docId = entry.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
   await db.collection(COL).doc(docId).set({ ...entry, emailConfirmationSent: false, emailRappelSent: false });
+}
+
+export async function markEmailConfirmationSent(email: string): Promise<void> {
+  const db = getDb();
+  const docId = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+  await db.collection(COL).doc(docId).update({ emailConfirmationSent: true });
 }

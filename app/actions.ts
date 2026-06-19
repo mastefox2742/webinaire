@@ -1,8 +1,14 @@
 "use server";
 
-import { addInscrit, getInscrits } from "./lib/inscrits";
+import {
+  addInscrit,
+  getInscrits,
+  markEmailConfirmationSent,
+  type Inscrit,
+} from "./lib/inscrits";
 import { getConfig } from "./lib/config";
 import { sendConfirmationEmail } from "./lib/email";
+import { sendInscriptionToN8n } from "./lib/n8n";
 
 export type InscriptionState =
   | { status: "idle" }
@@ -27,13 +33,33 @@ export async function inscrire(
     return { status: "error", message: "Adresse email invalide." };
   }
 
-  const existing = await getInscrits();
+  let existing: Inscrit[];
+  try {
+    existing = await getInscrits();
+  } catch (err) {
+    console.error("[inscription] getInscrits failed:", err);
+    return {
+      status: "error",
+      message: "Le service d'inscription est momentanément indisponible. Réessaie dans quelques instants.",
+    };
+  }
+
   if (existing.some((i) => i.email.toLowerCase() === email.toLowerCase())) {
     return { status: "error", message: "Cette adresse email est déjà inscrite." };
   }
 
+  const inscrit: Inscrit = {
+    nom,
+    email,
+    telephone,
+    profil,
+    date: new Date().toISOString(),
+    emailConfirmationSent: false,
+    emailRappelSent: false,
+  };
+
   try {
-    await addInscrit({ nom, email, telephone, profil, date: new Date().toISOString() });
+    await addInscrit(inscrit);
   } catch (err) {
     const msg = err instanceof Error ? err.message + " | " + err.stack : String(err);
     console.error("[inscription] addInscrit failed: " + msg);
@@ -42,17 +68,24 @@ export async function inscrire(
 
   const config = await getConfig();
 
-  // Email de confirmation (best-effort)
+  let confirmationSent = false;
   try {
-    await sendConfirmationEmail(
-      { nom, email, telephone, profil, date: new Date().toISOString(), emailConfirmationSent: false, emailRappelSent: false },
-      config
-    );
-  } catch {}
+    confirmationSent = await sendConfirmationEmail(inscrit, config);
+
+    if (!confirmationSent) {
+      confirmationSent = await sendInscriptionToN8n(inscrit, config);
+    }
+
+    if (confirmationSent) await markEmailConfirmationSent(email);
+  } catch (err) {
+    console.error("[inscription] confirmation email failed:", err);
+  }
 
   return {
     status: "success",
-    message: `Félicitations ${nom} ! Ta place est réservée. Un email de confirmation arrive dans ta boîte.`,
+    message: confirmationSent
+      ? `Félicitations ${nom} ! Ta place est réservée. Un email de confirmation arrive dans ta boîte.`
+      : `Félicitations ${nom} ! Ta place est réservée. L'email de confirmation te sera envoyé prochainement.`,
     whatsappLink: config.whatsappGroupLink,
   };
 }

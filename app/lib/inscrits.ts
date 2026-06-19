@@ -15,8 +15,9 @@ const COL = "inscrits";
 export async function getInscrits(): Promise<Inscrit[]> {
   try {
     const db = getDb();
-    const snap = await db.collection(COL).orderBy("date", "asc").get();
-    return snap.docs.map((d) => d.data() as Inscrit);
+    const snap = await db.collection(COL).get();
+    const docs = snap.docs.map((d) => d.data() as Inscrit);
+    return docs.sort((a, b) => a.date.localeCompare(b.date));
   } catch {
     return [];
   }

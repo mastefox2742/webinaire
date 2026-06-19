@@ -15,6 +15,25 @@ export type InscriptionState =
   | { status: "success"; message: string; whatsappLink: string }
   | { status: "error"; message: string };
 
+async function sendRegistrationConfirmation(inscrit: Inscrit) {
+  const config = await getConfig();
+  let sent = false;
+
+  try {
+    sent = await sendInscriptionToN8n(inscrit, config);
+
+    if (!sent) {
+      sent = await sendConfirmationEmail(inscrit, config);
+    }
+
+    if (sent) await markEmailConfirmationSent(inscrit.email);
+  } catch (err) {
+    console.error("[inscription] confirmation email failed:", err);
+  }
+
+  return { sent, config };
+}
+
 export async function inscrire(
   prevState: InscriptionState,
   formData: FormData
@@ -44,8 +63,25 @@ export async function inscrire(
     };
   }
 
-  if (existing.some((i) => i.email.toLowerCase() === email.toLowerCase())) {
-    return { status: "error", message: "Cette adresse email est déjà inscrite." };
+  const existingInscrit = existing.find(
+    (i) => i.email.toLowerCase() === email.toLowerCase()
+  );
+
+  if (existingInscrit) {
+    const { sent, config } = await sendRegistrationConfirmation({
+      ...existingInscrit,
+      nom,
+      telephone,
+      profil,
+    });
+
+    return {
+      status: "success",
+      message: sent
+        ? `${nom}, tu étais déjà inscrit(e). Un nouvel email de confirmation vient de t'être envoyé.`
+        : `${nom}, ta place est toujours réservée. L'email de confirmation te sera renvoyé prochainement.`,
+      whatsappLink: config.whatsappGroupLink,
+    };
   }
 
   const inscrit: Inscrit = {
@@ -66,20 +102,8 @@ export async function inscrire(
     return { status: "error", message: "Erreur lors de l'enregistrement. Réessaie dans quelques instants." };
   }
 
-  const config = await getConfig();
-
-  let confirmationSent = false;
-  try {
-    confirmationSent = await sendInscriptionToN8n(inscrit, config);
-
-    if (!confirmationSent) {
-      confirmationSent = await sendConfirmationEmail(inscrit, config);
-    }
-
-    if (confirmationSent) await markEmailConfirmationSent(email);
-  } catch (err) {
-    console.error("[inscription] confirmation email failed:", err);
-  }
+  const { sent: confirmationSent, config } =
+    await sendRegistrationConfirmation(inscrit);
 
   return {
     status: "success",

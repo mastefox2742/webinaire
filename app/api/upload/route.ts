@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getStorage } from "firebase-admin/storage";
+import { getDb } from "../../lib/firebase";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   const { isAuthenticated } = await import("../../admin/actions");
@@ -9,11 +12,6 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "Aucun fichier" }, { status: 400 });
-
-  const MAX_SIZE = 650 * 1024;
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Photo trop volumineuse (max 650 Ko)" }, { status: 400 });
-  }
 
   const allowedTypes: Record<string, string> = {
     "image/jpeg": "jpg",
@@ -26,8 +24,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Format non supporté (jpg, png, webp)" }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const dataUrl = `data:${file.type};base64,${buffer.toString("base64")}`;
+  try {
+    getDb(); // ensure Firebase is initialized
+    const bucket = getStorage().bucket(`${process.env.FIREBASE_PROJECT_ID}.appspot.com`);
+    const filename = `intervenants/${Date.now()}-${crypto.randomUUID()}.${safeExt}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-  return NextResponse.json({ url: dataUrl });
+    const fileRef = bucket.file(filename);
+    await fileRef.save(buffer, {
+      metadata: { contentType: file.type },
+      public: true,
+    });
+
+    const url = `https://storage.googleapis.com/${process.env.FIREBASE_PROJECT_ID}.appspot.com/${filename}`;
+    return NextResponse.json({ url });
+  } catch (err) {
+    console.error("[upload] Firebase Storage error:", err instanceof Error ? err.message : String(err));
+    return NextResponse.json({ error: "Erreur lors de l'upload." }, { status: 500 });
+  }
 }

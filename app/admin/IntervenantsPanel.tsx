@@ -19,6 +19,7 @@ function IntervenantForm({
   const [state, action, pending] = useActionState(saveIntervenantAction, initial);
   const [photoUrl, setPhotoUrl] = useState(existing?.photo ?? "");
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Close on success
@@ -28,12 +29,22 @@ function IntervenantForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError("");
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.url) setPhotoUrl(data.url);
-    setUploading(false);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setUploadError(data.error ?? "Impossible d'ajouter cette photo.");
+        return;
+      }
+      setPhotoUrl(data.url);
+    } catch {
+      setUploadError("Impossible d'ajouter cette photo.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -77,6 +88,8 @@ function IntervenantForm({
                     Supprimer la photo
                   </button>
                 )}
+                <p className="mt-2 text-xs text-gray-500">JPG, PNG ou WebP · 650 Ko maximum</p>
+                {uploadError && <p className="mt-1 text-xs text-red-400">{uploadError}</p>}
               </div>
             </div>
           </div>

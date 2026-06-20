@@ -19,10 +19,13 @@ function getAdminPasswordHash(): string {
 }
 
 function generateSessionToken(): string {
-  return crypto.randomBytes(32).toString("hex");
+  const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
+  const signature = crypto
+    .createHmac("sha256", getAdminPasswordHash())
+    .update(String(expiresAt))
+    .digest("hex");
+  return `${expiresAt}.${signature}`;
 }
-
-const sessionTokens = new Set<string>();
 
 export async function loginAction(
   _prev: { error?: string; success?: boolean },
@@ -37,7 +40,6 @@ export async function loginAction(
     return { error: "Configuration serveur manquante. Contactez l'administrateur." };
   }
   const token = generateSessionToken();
-  sessionTokens.add(token);
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -51,15 +53,29 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) sessionTokens.delete(token);
   jar.delete(SESSION_COOKIE);
 }
 
 export async function isAuthenticated(): Promise<boolean> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  return !!token && sessionTokens.has(token);
+  if (!token) return false;
+
+  const [expiresRaw, signature] = token.split(".");
+  const expiresAt = Number(expiresRaw);
+  if (!expiresAt || expiresAt <= Date.now() || !signature) return false;
+
+  const expected = crypto
+    .createHmac("sha256", getAdminPasswordHash())
+    .update(expiresRaw)
+    .digest("hex");
+
+  const actualBuffer = Buffer.from(signature, "hex");
+  const expectedBuffer = Buffer.from(expected, "hex");
+  return (
+    actualBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(actualBuffer, expectedBuffer)
+  );
 }
 
 export async function updateConfigAction(

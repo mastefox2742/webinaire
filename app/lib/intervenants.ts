@@ -14,12 +14,36 @@ const COL = "intervenants";
 
 const DEFAULT: Intervenant[] = [
   {
-    id: "zlat-obambi",
-    nom: "Zlat OBAMBI",
-    titre: "Fondateur — Groupe Alpha",
-    bio: "Entrepreneur technologique basé à Brazzaville, spécialisé en transformation digitale et intelligence artificielle appliquée aux marchés africains. Fondateur d'Alpha-tech, il forme et accompagne les entrepreneurs et étudiants congolais à tirer parti des outils numériques et de l'IA pour créer de la valeur.",
+    id: "fresneil-miche-mboni",
+    nom: "Fresneil Miche M’BONI",
+    titre: "Intervenant",
     photo: "",
-    badges: ["500+ accompagnés", "5 ans d'expérience", "Formateur IA"],
+    bio: "",
+    badges: [],
+  },
+  {
+    id: "abraham-filankembo",
+    nom: "Abraham FILANKEMBO",
+    titre: "Intervenant",
+    photo: "",
+    bio: "",
+    badges: [],
+  },
+  {
+    id: "stefane-rynaldi-hakoula",
+    nom: "Stéfane Rynaldi HAKOULA",
+    titre: "Intervenant",
+    photo: "",
+    bio: "",
+    badges: [],
+  },
+  {
+    id: "jobert-pion",
+    nom: "Jobert PION",
+    titre: "Intervenant",
+    photo: "",
+    bio: "",
+    badges: [],
   },
 ];
 

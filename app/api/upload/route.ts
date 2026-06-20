@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
 
   try {
     getDb(); // ensure Firebase is initialized
-    const bucket = getStorage().bucket(`${process.env.FIREBASE_PROJECT_ID}.appspot.com`);
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET
+      ?? `${process.env.FIREBASE_PROJECT_ID}.firebasestorage.app`;
+    const bucket = getStorage().bucket(bucketName);
     const filename = `intervenants/${Date.now()}-${crypto.randomUUID()}.${safeExt}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
       public: true,
     });
 
-    const url = `https://storage.googleapis.com/${process.env.FIREBASE_PROJECT_ID}.appspot.com/${filename}`;
+    const url = `https://storage.googleapis.com/${bucketName}/${filename}`;
     return NextResponse.json({ url });
   } catch (err) {
     console.error("[upload] Firebase Storage error:", err instanceof Error ? err.message : String(err));

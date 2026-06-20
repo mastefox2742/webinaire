@@ -67,7 +67,8 @@ function IntervenantForm({
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
                 {photoUrl ? (
-                  <Image src={photoUrl} alt="photo" width={80} height={80} className="w-full h-full object-cover" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl} alt="photo" className="w-full h-full object-cover" />
                 ) : (
                   <UserCircle className="w-10 h-10 text-gray-600" />
                 )}
@@ -193,7 +194,8 @@ export function IntervenantsPanel({ intervenants: initial }: { intervenants: Int
             {/* Avatar */}
             <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
               {p.photo ? (
-                <Image src={p.photo} alt={p.nom} width={48} height={48} className="w-full h-full object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.photo} alt={p.nom} className="w-full h-full object-cover" />
               ) : (
                 <span className="gradient-text font-black text-sm">
                   {p.nom.split(" ").map((w) => w[0]).slice(0, 2).join("")}

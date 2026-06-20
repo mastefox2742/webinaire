@@ -24,7 +24,8 @@ export function Intervenants({ intervenants }: { intervenants: Intervenant[] }) 
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center ring-2 ring-violet-200"
                   style={{ background: "linear-gradient(135deg, #7c3aed, #0891b2)" }}>
                   {p.photo ? (
-                    <Image src={p.photo} alt={p.nom} width={112} height={112} className="w-full h-full object-cover" />
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.photo} alt={p.nom} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-white font-black text-3xl">
                       {p.nom.split(" ").map((w) => w[0]).slice(0, 2).join("")}

@@ -124,6 +124,7 @@ export default async function AdminPage() {
                       <tr className="border-b border-white/5">
                         <th className="text-left text-gray-500 font-medium px-5 py-3">Nom</th>
                         <th className="text-left text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">Email</th>
+                        <th className="text-left text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Téléphone</th>
                         <th className="text-left text-gray-500 font-medium px-3 py-3">Profil</th>
                         <th className="text-left text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Inscrit le</th>
                         <th className="text-center text-gray-500 font-medium px-3 py-3">Mails</th>
@@ -134,6 +135,7 @@ export default async function AdminPage() {
                         <tr key={idx} className="border-b border-white/5 hover:bg-white/2 transition-colors">
                           <td className="px-5 py-3 text-white font-medium">{i.nom}</td>
                           <td className="px-3 py-3 text-gray-400 hidden sm:table-cell">{i.email}</td>
+                          <td className="px-3 py-3 text-gray-400 hidden md:table-cell">{i.telephone || <span className="text-gray-700">—</span>}</td>
                           <td className="px-3 py-3">
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                               i.profil === "entrepreneur_pro"
